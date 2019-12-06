@@ -1,8 +1,10 @@
 #! /usr/bin/env python3
 
 import xml.etree.ElementTree as ET
-from operator import attrgetter
 
+NUM_PARTIES = 3
+
+# https://elections.sos.state.tx.us/elchist331_race832.htm
 ELECTION_DATA = {
     "ANDERSON": (11335, 3307, 94, 14736, 28487),
     "ANDREWS": (3338, 776, 17, 4131, 9574),
@@ -268,10 +270,12 @@ class Polygon:
         self.neighbors = set()
 
         data = ELECTION_DATA[name.upper()]
-        self.votes = data[:3]
-        total_votes, self.num_voters = data[3:]
+        self.votes = list(data[:NUM_PARTIES])
+        total_votes, self.num_voters = data[NUM_PARTIES:]
         assert sum(self.votes) == total_votes
         assert self.num_voters > total_votes
+
+        self.winner = self.votes.index(max(*self.votes))
 
     def __str__(self):
         return self.name
@@ -318,8 +322,15 @@ class Main:
     def __init__(self):
         polys = LoadPolys()
         FindNeighbors(polys)
+        # for p in polys:
+        #     print(p, sorted(p.neighbors, key=Polygon.Key))
+        winners_by_party = [0] * NUM_PARTIES
+        votes_by_party = [0] * NUM_PARTIES
         for p in polys:
-            print(p, sorted(p.neighbors, key=Polygon.Key))
+            winners_by_party[p.winner] += 1
+            for i in range(NUM_PARTIES):
+                votes_by_party[i] += p.votes[i]
+        print([winners_by_party[i] / votes_by_party[i] for i in range(NUM_PARTIES)])
 
 
 Main()
